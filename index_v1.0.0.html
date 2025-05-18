@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>消防机器人状态监控</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .status-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .alarm {
+            background-color: #ffcccc;
+            animation: blink 1s infinite;
+        }
+
+        .normal {
+            background-color: #e6ffe6;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .navigation-status {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>消防机器人实时状态监控</h1>
+    <div class="status-container">
+        <!-- 传感器状态 -->
+        <div class="status-card">
+            <h2>🏭 传感器状态</h2>
+            <div id="smoke1" class="status-item">
+                <span>烟雾传感器1</span>
+                <span>---</span>
+            </div>
+            <div id="smoke2" class="status-item">
+                <span>烟雾传感器2</span>
+                <span>---</span>
+            </div>
+            <div id="smoke3" class="status-item">
+                <span>烟雾传感器3</span>
+                <span>---</span>
+            </div>
+            <div id="fire" class="status-item">
+                <span>火焰传感器</span>
+                <span>---</span>
+            </div>
+        </div>
+
+        <!-- 执行机构状态 -->
+        <div class="status-card">
+            <h2>⚙️ 执行机构状态</h2>
+            <div id="pump" class="status-item">
+                <span>水泵状态</span>
+                <span>---</span>
+            </div>
+            <div id="siren" class="status-item">
+                <span>警报器</span>
+                <span>---</span>
+            </div>
+            <div id="push_rod" class="status-item">
+                <span>推杆状态</span>
+                <span>---</span>
+            </div>
+            <div id="servo" class="status-item">
+                <span>云台角度</span>
+                <span>---</span>
+            </div>
+        </div>
+
+        <!-- 导航状态 -->
+        <div class="status-card">
+            <h2>📍 导航状态</h2>
+            <div id="navigation" class="status-item navigation-status">
+                <span>当前状态</span>
+                <span>---</span>
+            </div>
+            <div class="status-item">
+                <span>运行时间</span>
+                <span id="duration">00:00</span>
+            </div>
+            <div class="status-item">
+                <span>系统消息</span>
+                <span id="message">等待连接...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://10.42.0.218:8081');
+        let startTime = Date.now();
+
+        // 状态映射关系
+        const statusMap = {
+            navigation: {
+                600: '🕒 等待中',
+                601: '🚗 导航中',
+                602: '❌ 导航失败',
+                603: '✅ 导航成功',
+                604: '⛔ 导航取消'
+            },
+            servo: {
+                servo_up: '👆 抬头',
+                servo_down: '👇 低头',
+                servo_stop: '⏹️ 停止',
+                servo_low: '👇 低头',
+                servo_rest: '🏁 复位'
+            },
+            push_rod: {
+                up: '⬆️ 上升中',
+                down: '⬇️ 下降中',
+                stop: '⏹️ 停止'
+            }
+        };
+
+        ws.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            updateDisplay(data);
+            updateTimer();
+        };
+
+        function updateDisplay(statusData) {
+            // 更新传感器状态
+            updateSensor('smoke1', '10.42.0.122', 'smoke_detected1', statusData);
+            updateSensor('smoke2', '10.42.0.51', 'smoke_detected2', statusData);
+            updateSensor('smoke3', '10.42.0.23', 'smoke_detected3', statusData);
+            updateFireSensor(statusData);
+
+            // 更新执行机构状态
+            updateActuator('pump', '10.42.0.177', 'put_out', statusData, ['开启', '关闭']);
+            updateActuator('siren', '10.42.0.177', 'siren', statusData, ['🔔 警报中', '🔕 静音']);
+            updatePushRod(statusData);
+            updateServo(statusData);
+
+            // 更新导航状态
+            updateNavigation(statusData);
+
+            // 更新系统消息
+            document.getElementById('message').textContent = getSystemMessage(statusData);
+        }
+
+        function updateSensor(elementId, ip, field, data) {
+            const element = document.getElementById(elementId);
+            const state = data[ip]?.[field] ? '报警' : '正常';
+            element.querySelector('span:last-child').textContent = state;
+            element.className = `status-item ${data[ip]?.[field] ? 'alarm' : 'normal'}`;
+        }
+
+        function updateFireSensor(data) {
+            const element = document.getElementById('fire');
+            const fireIp = '10.42.0.171';
+            const state = data[fireIp]?.fire_detected ? '🔥 检测到火焰' : '✅ 正常';
+            element.querySelector('span:last-child').textContent = state;
+            element.className = `status-item ${data[fireIp]?.fire_detected ? 'alarm' : 'normal'}`;
+        }
+
+        function updateActuator(elementId, ip, field, data, states) {
+            const element = document.getElementById(elementId);
+            const value = data[ip]?.[field] ? states[0] : states[1];
+            element.querySelector('span:last-child').textContent = value;
+        }
+
+        function updatePushRod(data) {
+            const element = document.getElementById('push_rod');
+            const pushRodIp = '10.42.0.80';
+            const state = statusMap.push_rod[data[pushRodIp]?.push_rod] || '未知';
+            element.querySelector('span:last-child').textContent = state;
+        }
+
+        function updateServo(data) {
+            const element = document.getElementById('servo');
+            const servoIp = '10.42.0.171'; // 假设舵机由火焰传感器ESP32控制
+            const state = statusMap.servo[data[servoIp]?.servo] || '未知';
+            element.querySelector('span:last-child').textContent = state;
+        }
+
+        function updateNavigation(data) {
+            const element = document.getElementById('navigation');
+            for (const ip in data) {
+                if (data[ip].navigating) {
+                    const statusCode = data[ip].navigating;
+                    const statusText = statusMap.navigation[statusCode] || '未知状态';
+                    element.querySelector('span:last-child').textContent = statusText;
+                    element.className = `status-item ${statusCode === 601 ? 'alarm' :
+                        statusCode === 603 ? 'normal' : ''
+                        }`;
+                    break;
+                }
+            }
+        }
+
+        function getSystemMessage(data) {
+            for (const ip in data) {
+                if (data[ip].msg) {
+                    return data[ip].msg;
+                }
+            }
+            return '系统运行正常';
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const seconds = String(elapsed % 60).padStart(2, '0');
+            document.getElementById('duration').textContent = `${minutes}:${seconds}`;
+        }
+
+        // 初始化计时器
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+
+</html>

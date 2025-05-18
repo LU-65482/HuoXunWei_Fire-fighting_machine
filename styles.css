@@ -1,0 +1,103 @@
+/* 基础样式 */
+:root {
+  --primary-color: #2c3e50;
+  --success-color: #27ae60;
+  --danger-color: #e74c3c;
+  --warning-color: #f39c12;
+  --info-color: #3498db;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  padding: 2rem;
+  background: #f8f9fa;
+  line-height: 1.6;
+}
+
+/* 布局系统 */
+.status-container {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* 卡片设计 */
+.status-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.status-card:hover {
+  transform: translateY(-2px);
+}
+
+/* 状态项样式 */
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.status-label {
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+/* 状态指示器 */
+.status-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-left: 0.5rem;
+}
+
+.alarm {
+  background: var(--danger-color);
+  animation: pulse 1.5s infinite;
+}
+
+.normal {
+  background: var(--success-color);
+}
+
+/* 动画效果 */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem;
+  }
+
+  .status-card {
+    padding: 1rem;
+  }
+}
+
+/* 导航状态特殊样式 */
+.navigation-status {
+  background: linear-gradient(135deg, var(--info-color), #2980b9);
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+/* 系统消息样式 */
+#message {
+  font-style: italic;
+  color: #7f8c8d;
+}

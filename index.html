@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能消防机器人监控系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header>
+        <h1>🧯 智能消防机器人监控系统</h1>
+        <div class="system-info">
+            <span id="duration">运行时间: 00:00</span>
+            <span id="message">初始化中...</span>
+        </div>
+    </header>
+
+    <main class="status-container">
+        <!-- 传感器状态 -->
+        <section class="status-card">
+            <h2>🔍 传感器监测</h2>
+            <div id="smoke1" class="status-item">
+                <span class="status-label">烟雾传感器 #1</span>
+                <div>
+                    <span class="status-value">---</span>
+                    <span class="status-indicator"></span>
+                </div>
+            </div>
+            <!-- 其他传感器结构类似 -->
+        </section>
+
+        <!-- 执行机构状态 -->
+        <section class="status-card">
+            <h2>⚙️ 执行机构状态</h2>
+            <div id="pump" class="status-item">
+                <span class="status-label">灭火系统</span>
+                <span class="status-value">---</span>
+            </div>
+            <!-- 其他执行机构状态 -->
+        </section>
+
+        <!-- 导航状态 -->
+        <section class="status-card">
+            <h2>🗺️ 导航状态</h2>
+            <div id="navigation" class="status-item navigation-status">
+                <span class="status-label">当前状态</span>
+                <span class="status-value">---</span>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
